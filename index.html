@@ -9,8 +9,7 @@
     :root {
       --bg: #0a0f1c;
       --panel: #10182b;
-      --accent: #d32f2f; /* baseball red */
-      --accent-2: #ffffff;
+      --accent: #d32f2f;
       --text: #f5f7fb;
       --muted: #9aa7c7;
       --border: #223055;
@@ -35,12 +34,6 @@
     .logo {
       font-size: 1.4rem;
       font-weight: 800;
-      letter-spacing: 1px;
-    }
-
-    .nav {
-      display: flex;
-      gap: 12px;
     }
 
     .nav button {
@@ -88,10 +81,6 @@
       cursor: pointer;
     }
 
-    button:hover {
-      opacity: 0.9;
-    }
-
     .card {
       background: var(--panel);
       border-radius: 14px;
@@ -122,12 +111,12 @@
       font-size: 0.85rem;
       text-transform: uppercase;
       color: var(--muted);
+      cursor: pointer;
     }
 
     tr:hover {
       background: rgba(255,255,255,0.03);
     }
-
   </style>
 </head>
 <body>
@@ -135,8 +124,8 @@
 <div class="header">
   <div class="logo">⚾ LeBaseball</div>
   <div class="nav">
-    <button class="active" onclick="showTab('live')">Live</button>
-    <button onclick="showTab('standings')">Standings</button>
+    <button class="active" onclick="showTab('live', this)">Live</button>
+    <button onclick="showTab('standings', this)">Standings</button>
   </div>
 </div>
 
@@ -165,7 +154,13 @@ const CONFIG = {
   standings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQ_IKohYYL5ZFKK2PndFN-wf9YVxxafpkSbGA38SqYcVN4h5jFz0nTBCrAR5bRpMIic1Oy-ovFMkRc/pub?output=csv'
 };
 
-let state = { live: [], standings: [] };
+let state = {
+  live: [],
+  standings: [],
+  search: '',
+  sortLive: { key: null, dir: 'asc' },
+  sortStandings: { key: null, dir: 'asc' }
+};
 
 function parse(url) {
   return new Promise(res => {
@@ -173,17 +168,86 @@ function parse(url) {
   });
 }
 
-function buildTable(el, rows) {
+function sortData(data, sort) {
+  if (!sort.key) return data;
+  return [...data].sort((a,b) => {
+    let av = a[sort.key];
+    let bv = b[sort.key];
+    let numA = parseFloat(av);
+    let numB = parseFloat(bv);
+
+    if (!isNaN(numA) && !isNaN(numB)) {
+      return sort.dir === 'asc' ? numA - numB : numB - numA;
+    }
+
+    return sort.dir === 'asc'
+      ? String(av).localeCompare(String(bv))
+      : String(bv).localeCompare(String(av));
+  });
+}
+
+function buildTable(el, rows, sortState, setSort, renderFn) {
   if (!rows.length) return;
   const headers = Object.keys(rows[0]);
 
-  let html = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+  let html = '<tr>';
+  headers.forEach(h => {
+    let arrow = sortState.key === h ? (sortState.dir === 'asc' ? ' ▲' : ' ▼') : '';
+    html += `<th onclick="(${setSort.toString()})('${h}')">${h}${arrow}</th>`;
+  });
+  html += '</tr>';
 
   rows.forEach(r => {
     html += '<tr>' + headers.map(h => `<td>${r[h]}</td>`).join('') + '</tr>';
   });
 
   el.innerHTML = html;
+}
+
+function renderLive() {
+  let rows = state.live;
+  if (state.search) {
+    rows = rows.filter(r => Object.values(r).join(' ').toLowerCase().includes(state.search));
+  }
+
+  rows = sortData(rows, state.sortLive);
+
+  buildTable(
+    document.getElementById('liveTable'),
+    rows,
+    state.sortLive,
+    function(key) {
+      state.sortLive = {
+        key,
+        dir: state.sortLive.key === key && state.sortLive.dir === 'asc' ? 'desc' : 'asc'
+      };
+      renderLive();
+    },
+    renderLive
+  );
+}
+
+function renderStandings() {
+  let rows = state.standings;
+  if (state.search) {
+    rows = rows.filter(r => Object.values(r).join(' ').toLowerCase().includes(state.search));
+  }
+
+  rows = sortData(rows, state.sortStandings);
+
+  buildTable(
+    document.getElementById('standingsTable'),
+    rows,
+    state.sortStandings,
+    function(key) {
+      state.sortStandings = {
+        key,
+        dir: state.sortStandings.key === key && state.sortStandings.dir === 'asc' ? 'desc' : 'asc'
+      };
+      renderStandings();
+    },
+    renderStandings
+  );
 }
 
 async function loadData() {
@@ -195,17 +259,23 @@ async function loadData() {
   state.live = live;
   state.standings = standings;
 
-  buildTable(document.getElementById('liveTable'), live);
-  buildTable(document.getElementById('standingsTable'), standings);
+  renderLive();
+  renderStandings();
 }
 
-function showTab(tab) {
+function showTab(tab, el) {
   document.getElementById('liveSection').style.display = tab === 'live' ? 'block' : 'none';
   document.getElementById('standingsSection').style.display = tab === 'standings' ? 'block' : 'none';
 
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  el.classList.add('active');
 }
+
+document.getElementById('searchInput').addEventListener('input', e => {
+  state.search = e.target.value.toLowerCase();
+  renderLive();
+  renderStandings();
+});
 
 loadData();
 </script>
