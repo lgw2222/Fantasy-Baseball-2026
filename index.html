@@ -184,6 +184,58 @@
       background: #16223a;
     }
 
+    tr:/* Live: freeze only Manager */
+    #liveTable th:nth-child(1),
+    #liveTable td:nth-child(1) {
+      position: sticky;
+      left: 0;
+      z-index: 4;
+      background: var(--panel);
+      min-width: 90px;
+      width: 90px;
+    }
+
+    #liveTable th:nth-child(1) {
+      z-index: 6;
+      background: #16223a;
+    }
+
+    /* Live: make all stat columns the same width */
+    #liveTable th:not(:first-child),
+    #liveTable td:not(:first-child) {
+      min-width: 72px;
+      width: 72px;
+      max-width: 72px;
+      text-align: center;
+    }
+
+    /* Standings: freeze Team + Team Name */
+    #standingsTable th:nth-child(1),
+    #standingsTable td:nth-child(1) {
+      position: sticky;
+      left: 0;
+      z-index: 4;
+      background: var(--panel);
+      min-width: 90px;
+      width: 90px;
+    }
+
+    #standingsTable th:nth-child(2),
+    #standingsTable td:nth-child(2) {
+      position: sticky;
+      left: 90px;
+      z-index: 4;
+      background: var(--panel);
+      min-width: 140px;
+      width: 140px;
+    }
+
+    #standingsTable th:nth-child(1),
+    #standingsTable th:nth-child(2) {
+      z-index: 6;
+      background: #16223a;
+    }
+
     tr:hover {
       background: rgba(255,255,255,0.03);
     }
