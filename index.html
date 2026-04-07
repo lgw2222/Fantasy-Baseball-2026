@@ -135,56 +135,7 @@
       z-index: 5;
     }
 
-    /* Frozen first two columns */
-    #liveTable th:nth-child(1),
-    #liveTable td:nth-child(1) {
-      position: sticky;
-      left: 0;
-      z-index: 4;
-      background: var(--panel);
-      min-width: 90px;
-    }
-
-    #liveTable th:nth-child(2),
-    #liveTable td:nth-child(2) {
-      position: sticky;
-      left: 90px;
-      z-index: 4;
-      background: var(--panel);
-      min-width: 140px;
-    }
-
-    #liveTable th:nth-child(1),
-    #liveTable th:nth-child(2) {
-      z-index: 6;
-      background: #16223a;
-    }
-
-    #standingsTable th:nth-child(1),
-    #standingsTable td:nth-child(1) {
-      position: sticky;
-      left: 0;
-      z-index: 4;
-      background: var(--panel);
-      min-width: 90px;
-    }
-
-    #standingsTable th:nth-child(2),
-    #standingsTable td:nth-child(2) {
-      position: sticky;
-      left: 90px;
-      z-index: 4;
-      background: var(--panel);
-      min-width: 140px;
-    }
-
-    #standingsTable th:nth-child(1),
-    #standingsTable th:nth-child(2) {
-      z-index: 6;
-      background: #16223a;
-    }
-
-    tr:/* Live: freeze only Manager */
+    /* Live: freeze only Manager */
     #liveTable th:nth-child(1),
     #liveTable td:nth-child(1) {
       position: sticky;
@@ -207,6 +158,8 @@
       width: 72px;
       max-width: 72px;
       text-align: center;
+      position: relative; /* prevent accidental sticky inheritance */
+      left: auto;
     }
 
     /* Standings: freeze Team + Team Name */
