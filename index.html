@@ -104,6 +104,7 @@
     .table-container {
       overflow-x: auto;
       width: 100%;
+      position: relative;
     }
 
     .table-container::-webkit-scrollbar {
@@ -119,6 +120,7 @@
       padding: 10px;
       border-bottom: 1px solid var(--border);
       text-align: left;
+      background: var(--panel);
     }
 
     th {
@@ -127,6 +129,38 @@
       text-transform: uppercase;
       color: var(--muted);
       cursor: pointer;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    /* Frozen first two columns */
+    #liveTable th:nth-child(1),
+    #liveTable td:nth-child(1),
+    #standingsTable th:nth-child(1),
+    #standingsTable td:nth-child(1) {
+      position: sticky;
+      left: 0;
+      z-index: 4;
+      background: var(--panel);
+    }
+
+    #liveTable th:nth-child(2),
+    #liveTable td:nth-child(2),
+    #standingsTable th:nth-child(2),
+    #standingsTable td:nth-child(2) {
+      position: sticky;
+      left: 110px;
+      z-index: 4;
+      background: var(--panel);
+    }
+
+    #liveTable th:nth-child(1),
+    #liveTable th:nth-child(2),
+    #standingsTable th:nth-child(1),
+    #standingsTable th:nth-child(2) {
+      z-index: 6;
+      background: #16223a;
     }
 
     tr:hover {
