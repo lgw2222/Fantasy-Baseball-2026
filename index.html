@@ -98,6 +98,21 @@
     table {
       width: 100%;
       border-collapse: collapse;
+      min-width: 1200px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      width: 100%;
+    }
+
+    .table-container::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .table-container::-webkit-scrollbar-thumb {
+      background: #334;
+      border-radius: 4px;
     }
 
     th, td {
@@ -138,12 +153,16 @@
 
   <div class="card" id="liveSection">
     <h2>Live Stats</h2>
-    <table id="liveTable"></table>
+    <div class="table-container">
+      <table id="liveTable"></table>
+    </div>
   </div>
 
   <div class="card" id="standingsSection" style="display:none; margin-top:20px;">
     <h2>Standings</h2>
-    <table id="standingsTable"></table>
+    <div class="table-container">
+      <table id="standingsTable"></table>
+    </div>
   </div>
 
 </div>
