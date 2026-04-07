@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeBaseball</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0f1c;
+      --panel: #10182b;
+      --accent: #d32f2f; /* baseball red */
+      --accent-2: #ffffff;
+      --text: #f5f7fb;
+      --muted: #9aa7c7;
+      --border: #223055;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, #0d1a33, #050a16);
+      color: var(--text);
+    }
+
+    .header {
+      background: linear-gradient(90deg, #0b1324, #0f1f3d);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--accent);
+    }
+
+    .logo {
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 12px;
+    }
+
+    .nav button {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-weight: 700;
+      cursor: pointer;
+      padding: 6px 10px;
+    }
+
+    .nav button.active {
+      color: white;
+      border-bottom: 2px solid var(--accent);
+    }
+
+    .wrap {
+      padding: 20px;
+      max-width: 1300px;
+      margin: auto;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0f1b33;
+      color: white;
+    }
+
+    button {
+      background: var(--accent);
+      border: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .card {
+      background: var(--panel);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .card h2 {
+      margin: 0;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    th {
+      background: rgba(255,255,255,0.05);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    tr:hover {
+      background: rgba(255,255,255,0.03);
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">⚾ LeBaseball</div>
+  <div class="nav">
+    <button class="active" onclick="showTab('live')">Live</button>
+    <button onclick="showTab('standings')">Standings</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="controls">
+    <input id="searchInput" placeholder="Search..." />
+    <button onclick="loadData()">Refresh</button>
+  </div>
+
+  <div class="card" id="liveSection">
+    <h2>Live Stats</h2>
+    <table id="liveTable"></table>
+  </div>
+
+  <div class="card" id="standingsSection" style="display:none; margin-top:20px;">
+    <h2>Standings</h2>
+    <table id="standingsTable"></table>
+  </div>
+
+</div>
+
+<script>
+const CONFIG = {
+  live: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTl_GnkAGKaMTMZiSfmWOdv_tHKzTxC-WHg9jOm4W3dP_OqiycEGtyYq1dArlP_e3cQDlAVdampNZXH/pub?output=csv',
+  standings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQ_IKohYYL5ZFKK2PndFN-wf9YVxxafpkSbGA38SqYcVN4h5jFz0nTBCrAR5bRpMIic1Oy-ovFMkRc/pub?output=csv'
+};
+
+let state = { live: [], standings: [] };
+
+function parse(url) {
+  return new Promise(res => {
+    Papa.parse(url, { download: true, header: true, complete: r => res(r.data) });
+  });
+}
+
+function buildTable(el, rows) {
+  if (!rows.length) return;
+  const headers = Object.keys(rows[0]);
+
+  let html = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+
+  rows.forEach(r => {
+    html += '<tr>' + headers.map(h => `<td>${r[h]}</td>`).join('') + '</tr>';
+  });
+
+  el.innerHTML = html;
+}
+
+async function loadData() {
+  const [live, standings] = await Promise.all([
+    parse(CONFIG.live),
+    parse(CONFIG.standings)
+  ]);
+
+  state.live = live;
+  state.standings = standings;
+
+  buildTable(document.getElementById('liveTable'), live);
+  buildTable(document.getElementById('standingsTable'), standings);
+}
+
+function showTab(tab) {
+  document.getElementById('liveSection').style.display = tab === 'live' ? 'block' : 'none';
+  document.getElementById('standingsSection').style.display = tab === 'standings' ? 'block' : 'none';
+
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+loadData();
+</script>
+
+</body>
+</html>
