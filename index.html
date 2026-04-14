@@ -13,6 +13,7 @@
       --text: #f5f7fb;
       --muted: #9aa7c7;
       --border: #223055;
+      --header-bg: #16223a;
     }
 
     body {
@@ -80,7 +81,7 @@
       color: white;
     }
 
-    button {
+    .refresh-btn {
       background: var(--accent);
       border: none;
       padding: 10px 14px;
@@ -111,7 +112,7 @@
     }
 
     .table-container::-webkit-scrollbar {
-      height: 8px;
+      height: 10px;
     }
 
     .table-container::-webkit-scrollbar-thumb {
@@ -144,7 +145,17 @@
       z-index: 5;
     }
 
-    /* Live: freeze only Manager */
+    tr:hover {
+      background: rgba(255,255,255,0.03);
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 0.9rem;
+      padding: 10px 16px 16px;
+    }
+
+    /* LIVE: freeze only Manager */
     #liveTable th:nth-child(1),
     #liveTable td:nth-child(1) {
       position: sticky;
@@ -157,21 +168,21 @@
 
     #liveTable th:nth-child(1) {
       z-index: 6;
-      background: #16223a;
+      background: var(--header-bg);
     }
 
-    /* Live: make all other columns the same width */
+    /* LIVE: all non-manager columns same width, not sticky */
     #liveTable th:not(:first-child),
     #liveTable td:not(:first-child) {
       min-width: 72px;
       width: 72px;
       max-width: 72px;
       text-align: center;
-      position: relative;
+      position: static;
       left: auto;
     }
 
-    /* Live Points: freeze only Manager */
+    /* LIVE POINTS: freeze only Manager */
     #livePointsTable th:nth-child(1),
     #livePointsTable td:nth-child(1) {
       position: sticky;
@@ -184,7 +195,7 @@
 
     #livePointsTable th:nth-child(1) {
       z-index: 6;
-      background: #16223a;
+      background: var(--header-bg);
     }
 
     #livePointsTable th:not(:first-child),
@@ -193,11 +204,11 @@
       width: 88px;
       max-width: 88px;
       text-align: center;
-      position: relative;
+      position: static;
       left: auto;
     }
 
-    /* Standings: freeze Team + Team Name */
+    /* STANDINGS: freeze Team + Team Name */
     #standingsTable th:nth-child(1),
     #standingsTable td:nth-child(1) {
       position: sticky;
@@ -221,17 +232,7 @@
     #standingsTable th:nth-child(1),
     #standingsTable th:nth-child(2) {
       z-index: 6;
-      background: #16223a;
-    }
-
-    tr:hover {
-      background: rgba(255,255,255,0.03);
-    }
-
-    .note {
-      color: var(--muted);
-      font-size: 0.9rem;
-      padding: 10px 16px 16px;
+      background: var(--header-bg);
     }
   </style>
 </head>
@@ -247,10 +248,9 @@
 </div>
 
 <div class="wrap">
-
   <div class="controls">
     <input id="searchInput" placeholder="Search..." />
-    <button onclick="loadData()">Refresh</button>
+    <button class="refresh-btn" onclick="loadData()">Refresh</button>
   </div>
 
   <div class="card" id="liveSection">
@@ -274,13 +274,12 @@
       <table id="standingsTable"></table>
     </div>
   </div>
-
 </div>
 
 <script>
 const CONFIG = {
   live: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTl_GnkAGKaMTMZiSfmWOdv_tHKzTxC-WHg9jOm4W3dP_OqiycEGtyYq1dArlP_e3cQDlAVdampNZXH/pub?output=csv',
-  livePoints: 'PASTE_LIVE_POINTS_CSV_URL_HERE',
+  livePoints: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTl_GnkAGKaMTMZiSfmWOdv_tHKzTxC-WHg9jOm4W3dP_OqiycEGtyYq1dArlP_e3cQDlAVdampNZXH/pub?gid=912651851&single=true&output=csv',
   standings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQ_IKohYYL5ZFKK2PndFN-wf9YVxxafpkSbGA38SqYcVN4h5jFz0nTBCrAR5bRpMIic1Oy-ovFMkRc/pub?output=csv'
 };
 
@@ -296,10 +295,6 @@ let state = {
 
 function parse(url) {
   return new Promise((resolve, reject) => {
-    if (!url || url.includes('PASTE_')) {
-      resolve([]);
-      return;
-    }
     Papa.parse(url, {
       download: true,
       header: true,
@@ -311,49 +306,54 @@ function parse(url) {
 }
 
 function sortData(data, sort) {
-  if (!sort.key) return data;
-  return [...data].sort((a,b) => {
-    let av = a[sort.key];
-    let bv = b[sort.key];
-    let numA = parseFloat(av);
-    let numB = parseFloat(bv);
+  if (!sort.key) return [...data];
+  return [...data].sort((a, b) => {
+    const av = a[sort.key];
+    const bv = b[sort.key];
+    const numA = parseFloat(av);
+    const numB = parseFloat(bv);
 
     if (!isNaN(numA) && !isNaN(numB)) {
       return sort.dir === 'asc' ? numA - numB : numB - numA;
     }
 
     return sort.dir === 'asc'
-      ? String(av).localeCompare(String(bv))
-      : String(bv).localeCompare(String(av));
+      ? String(av ?? '').localeCompare(String(bv ?? ''))
+      : String(bv ?? '').localeCompare(String(av ?? ''));
   });
+}
+
+function filterRows(rows) {
+  if (!state.search) return rows;
+  return rows.filter(r =>
+    Object.values(r).join(' ').toLowerCase().includes(state.search)
+  );
 }
 
 function buildTable(el, rows, sortState, setSort) {
   el.innerHTML = '';
   if (!rows.length) return;
-  const headers = Object.keys(rows[0]);
 
-  let html = '<tr>';
+  const headers = Object.keys(rows[0]);
+  let html = '<thead><tr>';
+
   headers.forEach(h => {
-    let arrow = sortState.key === h ? (sortState.dir === 'asc' ? ' ▲' : ' ▼') : '';
-    html += `<th onclick="(${setSort.toString()})('${h}')">${h}${arrow}</th>`;
+    const arrow = sortState.key === h ? (sortState.dir === 'asc' ? ' ▲' : ' ▼') : '';
+    html += `<th onclick="(${setSort.toString()})('${String(h).replace(/'/g, "\\'")}')">${h}${arrow}</th>`;
   });
-  html += '</tr>';
+
+  html += '</tr></thead><tbody>';
 
   rows.forEach(r => {
     html += '<tr>' + headers.map(h => `<td>${r[h] ?? ''}</td>`).join('') + '</tr>';
   });
 
+  html += '</tbody>';
   el.innerHTML = html;
 }
 
-function filterRows(rows) {
-  if (!state.search) return rows;
-  return rows.filter(r => Object.values(r).join(' ').toLowerCase().includes(state.search));
-}
-
 function renderLive() {
-  let rows = sortData(filterRows(state.live), state.sortLive);
+  const rows = sortData(filterRows(state.live), state.sortLive);
   buildTable(
     document.getElementById('liveTable'),
     rows,
@@ -370,13 +370,11 @@ function renderLive() {
 
 function renderLivePoints() {
   const note = document.getElementById('livePointsNote');
-  let rows = sortData(filterRows(state.livePoints), state.sortLivePoints);
+  const rows = sortData(filterRows(state.livePoints), state.sortLivePoints);
 
   if (!rows.length) {
     document.getElementById('livePointsTable').innerHTML = '';
-    note.textContent = CONFIG.livePoints.includes('PASTE_')
-      ? 'Add your published Live Points CSV URL to CONFIG.livePoints and this page will load.'
-      : 'No live points data found.';
+    note.textContent = 'No live points data found.';
     return;
   }
 
@@ -396,7 +394,7 @@ function renderLivePoints() {
 }
 
 function renderStandings() {
-  let rows = sortData(filterRows(state.standings), state.sortStandings);
+  const rows = sortData(filterRows(state.standings), state.sortStandings);
   buildTable(
     document.getElementById('standingsTable'),
     rows,
